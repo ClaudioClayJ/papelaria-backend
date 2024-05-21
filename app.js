@@ -1,74 +1,144 @@
 const express = require('express')
-const app = express()
-const cep = [
+const app = express();
+const cep =[
     {
-      "cep": "01001-000",
-      "logradouro": "Praça da Sé",
-      "complemento": "lado ímpar",
-      "bairro": "Sé",
-      "localidade": "São Paulo",
-      "uf": "SP",
-      "ibge": "3550308",
-      "gia": "1004",
-      "ddd": "11",
-      "siafi": "7107"
-    },
-    {
-        "cep": "77814-790",
-        "logradouro": "Rua 20",
-        "complemento": "",
-        "bairro": "Loteamento Monte Sinai",
-        "localidade": "Araguaína",
-        "uf": "TO",
-        "ibge": "1702109",
-        "gia": "",
-        "ddd": "63",
-        "siafi": "9241"
-      }
+    "cep": "01001-000",
+    "logradouro": "Praça da Sé",
+    "complemento": "lado ímpar",
+    "bairro": "Sé",
+    "localidade": "São Paulo",
+    "uf": "SP",
+    "ibge": "3550308",
+    "gia": "1004",
+    "ddd": "11",
+    "siafi": "7107"
+  },
+  {
+    "cep": "77814-790",
+    "logradouro": "Rua 20",
+    "complemento": "",
+    "bairro": "Loteamento Monte Sinai",
+    "localidade": "Araguaína",
+    "uf": "TO",
+    "ibge": "1702109",
+    "gia": "",
+    "ddd": "63",
+    "siafi": "9241"
+  },
+  {
+    "cep": "77825-769",
+    "logradouro": "Rua dos Avelos",
+    "complemento": "",
+    "bairro": "Residencial Topázio",
+    "localidade": "Araguaína",
+    "uf": "TO",
+    "ibge": "1702109",
+    "gia": "",
+    "ddd": "63",
+    "siafi": "9241"
+  }
 ]
-const usuario=[
-    {nome:'carlos', idade:20},
-    {nome:'pedro', idade:30,peso:100},
-    {nome:'jr', idade:30,peso:100, cep:'58221-00'}
+ const alunos=[
+"Ana Silva",
+"Carlos Oliveira",
+"Marina Santos",
+"Rafaela Costa",
+"Pedro Almeida"
+]
+const cursos=[
+"Eletricista de Manutenção Industrial",
+"Mecânico de Usinagem",
+"Técnico em Automação Industrial",
+"Soldador de Estruturas Metálicas",
+"Técnico em Eletroelicaetrôn",
+"Operador de Máquinas CNC",
+"Técnico em Logística",
+"Programador de Computador",
+"Desenhista Técnico Mecânico",
+"Técnico em Segurança do Trabalho"
 ]
 
-app.use("todos",(req,res,next)=>{
+const matricula =[
+    {"idaluno":"2","idcurso":"6"},
+    {"idaluno":"4","idcurso":"5"}
+]
+
+const usuario=[
+    {nome:'carlos', idade:'20',peso:'100'},
+    {nome:'pedro', idade:'30'},
+    {nome: 'joao', idade: '18', peso: '75', cep: '77807060'}
+]
+app.use("/todos",(req, res, next)=>{
     res.send(usuario)
 })
-app.use("/nome",(req,res,next)=>{
+app.use("/nome",(req, res, next)=>{
     res.send(usuario[1].nome)
 })
-app.use("/soma",(req,res,next)=>{
-    let total=0
-    for(i=0; i<usuario.length; i++){
-        total=total+parseInt(usuario[i].idade)
+app.use("/matricula/:idaluno",(req, res, next)=>{
+    const id = req.params.idaluno
+    const nome = alunos[id]
+    const matriculado = matricula.filter(linha=>linha.idaluno==id)
+    const nomecursos=cursos[matriculado[0].idcurso]
+
+    function findByKey(key, value) {
+        return (item, i) => item[key] === value
     }
+        let findParams = findByKey('idcurso',matriculado[0].idcurso )
+        let index = matricula.findIndex(findParams)
+
+    const resposta={
+        mensagem:"DADOS DA MATRICULA",
+        idaluno:id,
+        nomedoaluno:nome,
+        cursomatriculado:nomecursos,
+        idmatricula:index
+    }
+    res.send(resposta)
     
-    res.send('Soma total:'+total)
+   
+
 })
-// app.use("/cep",(req,res,next)=>{
-//         res.send(cep)
-// })
-// app.use("/cep/:valor",(req,res,next)=>{
-//     const valor = req.params.valor
-//     res.send(valor) 
-// })
-// app.use("/cep/:locais",(req,res,next)=>{
-//     const locais = cep.filter(local =>(
-//         local.cep == "01001-000"));
-//         res.send(locais)
-// })
-// app.use("/cep/:valor",(req,res,next)=>{
-//     const valor = req.params.valor
-//     const locais = cep.filter(local => local.cep === valor);
-//     res.send(locais)
-// })
-app.use("/viacep/:valor",(req,res,next)=>{
-    const valor = req.params.valor
-    const resultado=""
-    const url = "https://viacep.com.br/ws/"+valor+"/json"
-    fetch(url).then(resposta =>{
-        console.log(resposta)
+app.use("/cep/:valor",(req, res, next)=>{
+    const valor=req.params.valor
+    const cepfiltrado = cep.filter(linha=>{
+       if(linha.cep===valor)
+       { return linha}
     })
+    res.send(cepfiltrado)
+})
+// https://viacep.com.br/ws/01001000/json/
+    app.use("/viacep/:valor",(req, res, next)=>{
+        const valor=req.params.valor;
+    fetch("https://viacep.com.br/ws/"
+                    +valor+"/json")
+                    .then(resposta=>
+                        
+                            resposta.json()
+                            //"cep,logradouro, localidade"                                
+                    ).then(data=>{
+                        const dados={
+                            cep:data.cep,
+                            logradouro:data.logradouro,
+                            localidade:data.localidade
+                        }
+                        res.send(dados)
+                    })
+    })
+
+// alunos[1]
+// const mat={'idaluno':'1','idcurso':'3'}
+// const matricula=[
+//     {'idaluno':'1','idcurso':'3'},
+//     {"idaluno":'3', "idcurso:":"5"}
+// ]
+
+app.use("/soma",(req, res, next)=>{
+    let total=0;
+    
+   for(i=0;   i<usuario.length;   i++)
+   {
+     total=total+parseInt(usuario[i].idade)
+   }
+    res.send("Soma total: "+total);
 })
 module.exports = app
