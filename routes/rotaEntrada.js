@@ -17,6 +17,44 @@ db.run(`CREATE TABLE IF NOT EXISTS
     }
 });
 
+function atualizarestoque(id_produto,quantidade,valor_unitario){
+
+    db.get('SELECT * FROM estoque where id_produto=?',[id_produto], (error, rows) => {
+        if (error) {
+            return res.status(500).send({
+                error: error.message
+            });
+        }
+        
+        if(rows.length>0){
+           // atualizar a quantidade no estoque 1
+           //acrescentando aquantidade inserida na entrada
+           const quantidaEstoque = rows[0].quantidade;
+           const quantidadeAtualizada = parseFloat(quantidade + quantidaEstoque)
+           const total = quantidade*valor_unitario
+           const updateEstoque = db.prepare(`
+           UPDATE estoque SET quantidade=?, valor_unitario=?, total=? WHERE quantidade= ?`);
+           updateEstoque.run(quantidadeAtualizada, quantidade, valor_unitario, total, id_produto);
+           updateEstoque.finalize();
+        }else{
+            //inserir a mesma quabtidade inserida na entrada
+            db.serialize(() => {
+                const total = quantidade*valor_unitario
+                const insertEstoque = db.prepare(`
+                INSERT INTO estoque(id_produto, quantidade, valor_unitario, total) VALUES(?,?,?,?)`);
+                insertEstoque.run(id_produto, quantidade, valor_unitario, total);
+                insertEstoque.finalize();
+        
+                // const idgerado = insertEntrada.LAST_INERT_ID()
+           
+            });
+
+
+        }
+       
+    });
+
+}
 
 //consultar todos os dados
 router.get("/",(req,res,next)=>{
@@ -59,7 +97,13 @@ router.post("/",(req,res,next)=>{
         INSERT INTO entrada(id_produto, quantidade, valor_unitario, data_entrada) VALUES(?,?,?,?)`);
         insertEntrada.run(id_produto, quantidade, valor_unitario, data_entrada);
         insertEntrada.finalize();
+
+        // const idgerado = insertEntrada.LAST_INERT_ID()
+   
     });
+
+    atualizarestoque(id_produto,quantidade,valor_unitario);
+
     process.on("SIGINT", () => {
         db.close((err) => {
             if (err) {
@@ -72,6 +116,13 @@ router.post("/",(req,res,next)=>{
     .send({ mensagem: "Entrada salva com sucesso!" });
 });
 
+
+router.get("/calculo",(req,res,next)=>{
+const n1 = 10
+const n2 = 20
+const total = parsetFloat(n1 + n2)
+console.log(total)
+})
 // aqui podemos alterar dados da entrada
 router.put("/",(req,res,next)=>{
  const {id,id_produto, quantidade, valor_unitario, data_entrada} = req.body;
